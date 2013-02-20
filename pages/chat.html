@@ -1,0 +1,160 @@
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <style type="text/css">
+        body {
+            background: url("../images/BG.jpg") repeat scroll 0 0 #000000;
+        }
+
+        #log {
+          width: 70%;
+          height: 90%;
+          overflow: auto;
+          background-color: #f2e3d2;
+          font-family: 'Helvetica Neue',Helvetica,sans-serif;
+          position: absolute;
+          opacity: 0.7;
+        }
+
+        #users {
+          width: 20%;
+          height: 90%;
+          left: 75%;
+          background-color: #f2e3d2;
+          font-family: 'Helvetica Neue',Helvetica,sans-serif;
+          position: absolute;
+          opacity: 0.7;
+        }
+
+        #inputText {
+          position: absolute;
+          width: 70%;
+          top: 93%;
+        }
+
+        #input {
+            width: 89%;
+        }
+        #send {
+            width: 10%;
+        }
+
+        .in {
+            color: rgb(0, 0, 0);
+        }
+        .out {
+            color: rgb(0, 0, 0);
+        }
+        .time {
+            color: rgb(144, 144, 144);
+            font: 10pt 'Courier New';
+        }
+        .system {
+            color: rgb(165, 42, 42);
+        }
+        .user {
+            color: rgb(25, 25, 112);
+        }
+
+          .submit-button {
+           border: 1px solid #447314;
+           background: #6aa436;
+           background: -webkit-gradient(linear, left top, left bottom, from(#8dc059), to(#6aa436));
+           background: -webkit-linear-gradient(top, #8dc059, #6aa436);
+           background: -moz-linear-gradient(top, #8dc059, #6aa436);
+           background: -ms-linear-gradient(top, #8dc059, #6aa436);
+           background: -o-linear-gradient(top, #8dc059, #6aa436);
+           background-image: -ms-linear-gradient(top, #8dc059 0%, #6aa436 100%);
+           -webkit-border-radius: 4px;
+           -moz-border-radius: 4px;
+           border-radius: 4px;
+           -webkit-box-shadow: rgba(255,255,255,0.4) 0 1px 0, inset rgba(255,255,255,0.4) 0 1px 0;
+           -moz-box-shadow: rgba(255,255,255,0.4) 0 1px 0, inset rgba(255,255,255,0.4) 0 1px 0;
+           box-shadow: rgba(255,255,255,0.4) 0 1px 0, inset rgba(255,255,255,0.4) 0 1px 0;
+           text-shadow: #addc7e 0 1px 0;
+           color: #31540c;
+           font-family: helvetica, serif;
+           padding: 8.5px 18px;
+           font-size: 14px;
+           text-decoration: none;
+           vertical-align: middle;
+           }
+        .submit-button:hover {
+           border: 1px solid #447314;
+           text-shadow: #31540c 0 1px 0;
+           background: #6aa436;
+           background: -webkit-gradient(linear, left top, left bottom, from(#8dc059), to(#6aa436));
+           background: -webkit-linear-gradient(top, #8dc059, #6aa436);
+           background: -moz-linear-gradient(top, #8dc059, #6aa436);
+           background: -ms-linear-gradient(top, #8dc059, #6aa436);
+           background: -o-linear-gradient(top, #8dc059, #6aa436);
+           background-image: -ms-linear-gradient(top, #8dc059 0%, #6aa436 100%);
+           color: #fff;
+           }
+        .submit-button:active {
+           text-shadow: #31540c 0 1px 0;
+           border: 1px solid #447314;
+           background: #8dc059;
+           background: -webkit-gradient(linear, left top, left bottom, from(#6aa436), to(#6aa436));
+           background: -webkit-linear-gradient(top, #6aa436, #8dc059);
+           background: -moz-linear-gradient(top, #6aa436, #8dc059);
+           background: -ms-linear-gradient(top, #6aa436, #8dc059);
+           background: -o-linear-gradient(top, #6aa436, #8dc059);
+           background-image: -ms-linear-gradient(top, #6aa436 0%, #8dc059 100%);
+           color: #fff;
+           }
+    </style>
+    <script src="http://127.0.0.1:8125/socket.io/socket.io.js"></script>
+    <script type="text/javascript">
+      // Создаем текст сообщений для событий
+      strings = {
+          'connected': '[sys][time]%time%[/time]: Вы успешно соединились к сервером как [user]%name%[/user].[/sys]',
+          'userJoined': '[sys][time]%time%[/time]: Пользователь [user]%name%[/user] присоединился к чату.[/sys]',
+          'messageSent': '[out][time]%time%[/time]: [user]%name%[/user]: %text%[/out]',
+          'messageReceived': '[in][time]%time%[/time]: [user]%name%[/user]: %text%[/in]',
+          'userSplit': '[sys][time]%time%[/time]: Пользователь [user]%name%[/user] покинул чат.[/sys]'
+      };
+      window.onload = function() {
+          // Создаем соединение с сервером; websockets почему-то в Хроме не работают, используем xhr
+          if (navigator.userAgent.toLowerCase().indexOf('chrome') != -1) {
+              socket = io.connect('http://127.0.0.1:8125', {'transports': ['xhr-polling']});
+          } else {
+              socket = io.connect('http://127.0.0.1:8125');
+          }
+          socket.on('connect', function () {
+//              var firstName = escape(document.querySelector('#hidName').value)
+              socket.send("name="+escape(document.querySelector('#hidName').value));
+//              document.querySelector("#users").innerHTML += "<span id="+firstName+">"+firstName+"</span>";
+
+              socket.on('message', function (msg) {
+                  // Добавляем в лог сообщение, заменив время, имя и текст на полученные
+                  document.querySelector('#log').innerHTML += strings[msg.event].replace(/\[([a-z]+)\]/g, '<span class="$1">').replace(/\[\/[a-z]+\]/g, '</span>').replace(/\%time\%/, msg.time).replace(/\%name\%/, msg.name).replace(/\%text\%/, unescape(msg.text).replace('<', '&lt;').replace('>', '&gt;')) + '<br>';
+                  // Прокручиваем лог в конец
+                  document.querySelector('#log').scrollTop = document.querySelector('#log').scrollHeight;
+              });
+              // При нажатии <Enter> или кнопки отправляем текст
+              document.querySelector('#input').onkeypress = function(e) {
+                  if (e.which == '13') {
+                      // Отправляем содержимое input'а, закодированное в escape-последовательность
+                      socket.send(escape(document.querySelector('#input').value));
+                      // Очищаем input
+                      document.querySelector('#input').value = '';
+                  }
+              };
+              document.querySelector('#send').onclick = function() {
+                  socket.send(escape(document.querySelector('#input').value));
+                  document.querySelector('#input').value = '';
+              };    
+          });
+      };
+    </script>
+</head>
+<body>
+    <div id="log"></div>
+    <!--div id="users"></div-->
+    <div id="inputText">
+      <input type="text" id="input" autofocus/>
+      <input type="submit" class="submit-button" id="send" value="Send"/>
+    </div>
+</body>
+</html>
